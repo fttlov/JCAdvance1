@@ -154,10 +154,6 @@
 #define ADAPTIVE_TRIGGERS_RIFLE_MODE		4
 #define ADAPTIVE_TRIGGERS_BOW_MODE			5
 #define ADAPTIVE_TRIGGERS_CAR_MODE			6
-struct ButtonCombo {
-	int Button1 = 0;
-	int Button2 = 0;
-};
 
 bool ExternalPedalsConnected = false;
 HANDLE hSerial;
@@ -480,13 +476,10 @@ struct _AppStatus {
 	int AimingButton = 0;
 	bool BTReset = true;
 	bool JoyconRumbleMerge = false;
-	//int   DrivingToggleButton = 0;		//старый код биндинга одной кнопки в Config.ini
-	//int   AimingToggleButton = 0;
-	//int   AimingModeToggleButton = 0;        // переключение mouse/stick
-	// ← новый код для биндинга сочетаний кнопок
-	ButtonCombo DrivingToggleButton;
-	ButtonCombo AimingToggleButton;
-	ButtonCombo AimingModeToggleButton;
+	int DrivingToggleButton = 0;		// Toggle Hotkey
+	int AimingToggleButton = 0;			// Toggle Hotkey
+	int AimingModeToggleButton = 0;		// Toggle Hotkey
+	bool AimingByPressingMode = true;	// switch MotionAimingModeOnlyPressed/	MotionAimingMode
 
 	struct _HotKeys
 	{
@@ -563,8 +556,8 @@ struct _CurrentXboxProfile {
 	unsigned int DSEdgeR4 = 0;
 	unsigned int ZL = XINPUT_GAMEPAD_LEFT_TRIGGER;   // по умолчанию оставляем LT (совместимость)
 	unsigned int ZR = XINPUT_GAMEPAD_RIGHT_TRIGGER;  // по умолчанию оставляем RT (совместимость)
-	unsigned int HOME = 0;   // добавлено для Joy-Con HOME
-	unsigned int CAPTURE = 0;
+	unsigned int HOME = 0;   // Joy-Con HOME
+	unsigned int CAPTURE = 0;// Joy-Con Capture
 };
 _CurrentXboxProfile CurrentXboxProfile;
 
@@ -1061,27 +1054,26 @@ int SonyNintendoKeyNameToJoyShockKeyCode(std::string KeyName) {
 		{"HOME", JSMASK_HOME},
 	};
 
-	if (KeyMap.find(KeyName) != KeyMap.end())
+	/*if (KeyMap.find(KeyName) != KeyMap.end())
 		return KeyMap[KeyName];
 	else
 		return 0;
-}
-
-// ← новый код (add)
-ButtonCombo StringToButtonCombo(std::string KeyName) {
-	ButtonCombo combo;
+}*/
+	// для двухкнопочного биндинга
 	size_t plusPos = KeyName.find('+');
 	if (plusPos != std::string::npos) {
-		std::string part1 = KeyName.substr(0, plusPos);
-		std::string part2 = KeyName.substr(plusPos + 1);
-		combo.Button1 = SonyNintendoKeyNameToJoyShockKeyCode(part1);
-		combo.Button2 = SonyNintendoKeyNameToJoyShockKeyCode(part2);
+		std::string key1 = KeyName.substr(0, plusPos);
+		std::string key2 = KeyName.substr(plusPos + 1);
+		int code1 = (KeyMap.find(key1) != KeyMap.end()) ? KeyMap[key1] : 0;
+		int code2 = (KeyMap.find(key2) != KeyMap.end()) ? KeyMap[key2] : 0;
+		return code1 | code2;
 	}
 	else {
-		combo.Button1 = SonyNintendoKeyNameToJoyShockKeyCode(KeyName);
-		combo.Button2 = 0;
+		if (KeyMap.find(KeyName) != KeyMap.end())
+			return KeyMap[KeyName];
+		else
+			return 0;
 	}
-	return combo;
 }
 
 /*int JoyKeyNameToKeyCode(std::string KeyName) {
